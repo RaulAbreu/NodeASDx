@@ -1,0 +1,66 @@
+<!--
+///////////////////////////////////////////////////////
+//
+// Paulo Gandra de Sousa, Alexandre Bragança
+// PSIDI / MEI / ISEP
+// (c) 2014
+//
+///////////////////////////////////////////////////////
+
+//
+// an HTML client to the message server to upload the photo of an user
+//
+
+//
+// WARNING
+//
+// this code violates the REST principles that URIs are opaque, as the client 
+// knows how to build the URL to post the photo.
+// it should use hypermedia instead.
+//
+
+-->
+
+<html>
+<script>
+
+function doPOST() {
+	var form = document.getElementById("NewForm");
+	var albumID = document.getElementById("albumID").value;	
+	var Description = document.getElementById("description");
+	var Date = document.getElementById("date");
+	var action = "http://localhost:3001/album/" + albumID + "/photos/";	
+	form.setAttribute("action", action);	
+	form.submit();
+}
+function doPUT() {
+	var form = document.getElementById("UpdateForm");
+	// var albumID = document.getElementById("UalbumID").value;	
+	var photoID = document.getElementById("UphotoID");
+	var Description = document.getElementById("Udescription");
+	var Date = document.getElementById("Udate");
+	var action = "http://localhost:3001/photos/" + photoID;	
+	form.setAttribute("action", action);	
+	form.submit();
+}
+</script>
+<body>
+	<h1>New Photo HTML Client</h1>
+	<form id="NewForm" method="post" enctype="multipart/form-data">
+		<div>AlbumID: <input type="text" name="albumID" id="albumID"></div>
+		<div>Description: <input type="text" name="description" id="description"></div>
+		<div>Date: <input type="date" name="date" id="date"></div>
+  		<input type="file" name="displayImage"><p/>		
+  		<input type="submit" text="New photo" onclick="doPOST();">
+  	</form>
+  	<h1>Update Photo HTML Client</h1>
+	<form id="UpdateForm" method="post" enctype="multipart/form-data">
+		<!-- <div>AlbumID: <input type="text" name="UalbumID" id="UalbumID"></div> -->
+		<div>PhotoID: <input type="text" name="UphotoID" id="UphotoID"></div>
+		<div>Description: <input type="text" name="Udescription" id="Udescription"></div>
+		<div>Date: <input type="date" name="Udate" id="Udate"></div>
+  		<input type="file" name="UdisplayImage"><p/>		
+  		<input type="submit" text="Update photo" onclick="doPUT();">
+  	</form>
+  </body>
+</html>
