@@ -14,20 +14,21 @@
 //
 
 
-var express = require('express');
-var bodyParser = require('body-parser');
-var multer = require('multer');
+const express = require('express');
+const bodyParser = require('body-parser');
+const multer = require('multer');
 
 
 // var multer = require('multer'); // for multipart file upload via form
 
 //var methodOverride = require('method-override');
 
-// var messageHandling = require("./message-handler");
-var usersHandler = require("./users");
-var albumsHandler = require("./albums");
+
+const usersHandler = require("./users");
+const albumsHandler = require("./albums");
+const ordersHandler = require("./orders");
 	
-var app = express();
+const app = express();
 
 app.use(multer({ dest: './uploads/'}));
 app.use(bodyParser.json());
@@ -92,37 +93,68 @@ app.post("/login", function(req, res) {
 });
 
 
-app.route("/album")
+app.route("/album")	
+	.put(function(req, res) {
+			res.status(405).send("Request not supported.");	
+		})
+	.delete(function(req, res) {
+			res.status(405).send("Request not supported.");	
+		})
 	.get(albumsHandler.GetAlbums)
-	.post(albumsHandler.PostAlbums)
-	.put()
-	.delete();
+	.post(albumsHandler.PostAlbums);
 
 app.route("/album/:aID")
+	.put(function(req, res) {
+			res.status(405).send("Request not supported.");	
+		})
 	.get(albumsHandler.SingleGetAlbum)
 	.post(albumsHandler.SinglePostAlbum)
-	.put(albumsHandler.SinglePutAlbum)
 	.delete(albumsHandler.SingleDeleteAlbum);
 
 app.route("/album/:aID/photos")
+	.put(function(req, res) {
+			res.status(405).send("Request not supported.");	
+		})
 	.get(albumsHandler.GetAlbumPhotos)
-	.post(albumsHandler.PostAlbumPhotos)
-	.put(albumsHandler.PutAlbumPhotos)
+	.post(albumsHandler.PostAlbumPhotos)	
 	.delete(albumsHandler.DeleteAlbumPhotos);
 	
 
-app.route("/album/:aID/photos/:phID")
+app.route("/album/:aID/photos/:phID")	
+	.post(function(req, res) {
+			res.status(405).send("Request not supported.");	
+		})
+	.put(function(req, res) {
+			res.status(405).send("Request not supported.");	
+		})
 	.get(albumsHandler.GetAlbumSinglePhoto)
-	.post(albumsHandler.PostAlbumSinglePhoto)
-	.put(albumsHandler.PutAlbumSinglePhoto)
 	.delete(albumsHandler.DeleteAlbumSinglePhoto);
 
 
-app.route("/photos/:phID")
-	.get(albumsHandler.GetSinglePhoto)
-	.post(albumsHandler.PostSinglePhoto)
-	.put(albumsHandler.PutSinglePhoto)
-	.delete(albumsHandler.DeleteSinglePhoto);
+app.route("/photo/:phID")
+	.get(function(req,res) {
+		res.status(405).send("Request not supported.");	
+	})
+	.put(function(req,res) {
+		res.status(405).send("Request not supported.");	
+	})
+	.delete(function(req,res) {
+		res.status(405).send("Request not supported.");	
+	})
+	.post(albumsHandler.PostSinglePhoto);
+
+
+app.route("/order")
+	.put(function(req, res) {
+			res.status(405).send("Request not supported.");	
+		})
+	.delete(function(req, res) {
+			res.status(405).send("Request not supported.");	
+		})
+	.get(ordersHandler.GetOrders)
+	.post(ordersHandler.PostOrders);
+
+
 
 /////////////////////////////
 // STARTING ...

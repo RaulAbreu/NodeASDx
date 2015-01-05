@@ -54,7 +54,8 @@ function PostUsers(req, res) {
 		if (entry == undefined)
 		{
 			users[req.body.username] = {username:req.body.username, email:req.body.email, password:req.body.password, createdOn: Date(), status: "Active"};
-			res.status(201).send('Location', SERVER_ROOT + "/user/" + req.body.username);	
+			res.set('Location', SERVER_ROOT + "/user/" + req.body.username);
+			res.sendstatus(201)
 		}
 		else {
 			res.status(409).send("User not allowed");
@@ -169,3 +170,5 @@ exports.SinglePutUser = PutUser;
 exports.SingleDeleteUser = DeleteUser;
 
 exports.DoLogin = login;
+
+exports.TheUser = users

@@ -1,19 +1,11 @@
-
-///////////////////////////////////////////////////////
 //
-// Paulo Gandra de Sousa, Alexandre Bragança
-// PSIDI / MEI / ISEP
-// (c) 2014
-//
-///////////////////////////////////////////////////////
-
-//
-// a node module to handle the /user/ resource and the /photo/ subresource
+// a node module to handle the /album/ resource and the /photos/ subresource
+// 
 //
 
 
 const fs = require("fs");
-
+const request = require('request');
 
 /************/
 // data
@@ -31,29 +23,26 @@ const ROOT_DIR = __dirname;
 var albums =  {};
 var photos =  {};
 
+
 const photoValue = 7;
 const shipValue = 12.5;
-
+const QuoteURI="http://iheartquotes.com/api/v1/random?format=json";
 
 
 // SAMPLE DATA
-
-var now = new Date();
-var yesterday = now.getDate() - 1;
 
 
 photos['ph25.5'] = {id: "ph25.5", path: "D:\\PSIDI_Dev\\NodeASDx\\BackOffice\\photos\\ph25.5.jpg", description: "Que bonito", date: "2022-02-02", owner: "Mary", createdOn: "2015-01-03" }	
 
 
 albums['1'] = {id:"1", owner: "Mary", name:"teste", description: "teste grande", beginDate: new Date(2014, 05, 02), endDate: new Date(2014,06,02), createdOn: new Date(),
-photosCount: 1, photos:[ photos['ph25.5'] ], forPrinting: false, theme:"life", citation:"vazio", price:19.5, status:"Active"};
+photosCount: 1, photos:[ photos['ph25.5'] ], forPrinting: false, theme:"life", citation:"After I run your program, let's make love like crazed weasels, OK?", price:19.5, status:"Active"};
 
 albums['2'] =  {id:"2", owner: "Ann",  name:"teste2", description: "teste grande 2", beginDate: new Date(2013, 05, 02), endDate: new Date(2014,05,02), createdOn: new Date().getDate()-1,
-photosCount: 0, photos:[], forPrinting: false, theme:"life", citation:"vazio", price:0, status:"Active"};
+photosCount: 0, photos:[], forPrinting: true, theme:"life", citation:"Machines take me by surprise with great frequency.", price:0, status:"Active"};
 
 albums['3'] =  {id:"3", owner: "Tom",  name:"teste3", description: "teste grande 3", beginDate: new Date(2013, 05, 02), endDate: new Date(2013,07,02), createdOn: new Date().getDate()-1,
-photosCount: 0, photos:[], forPrinting: true, theme:"life", citation:"vazio", price:0, status:"Active"};
-
+photosCount: 0, photos:[], forPrinting: true, theme:"life", citation:"As he had feared, his orders had been forgotten and everyone had brought the potato salad.", price:0, status:"Active"};
 
 
 
@@ -78,15 +67,11 @@ function getAlbumMaxID(){
 	return parseInt(maxID) + 1;
 };
 
-
-
 function GetAlbums(req, res) {
-		res.status(405).send("Request not supported.");
-	};
 
-function PutAlbums(req, res) {
+		//Tenho k permitir, quando meter a questão do user!!!!
 		res.status(405).send("Request not supported.");
-	};
+};
 
 function PostAlbums(req, res) {
 		var albumID = getAlbumMaxID();
@@ -99,18 +84,17 @@ function PostAlbums(req, res) {
 							photosCount: 0,  
 							forPrinting: req.body.forPrinting, 
 							theme: req.body.theme, 
-							citation: "" ,
+							citation: undefined ,
 							price: 0,
 							status: "Active",
 							createdOn: new Date(),
 							updatedOn: new Date()
 						};	
-		res.status(202).send('Location', SERVER_ROOT + "/album/" + albumID);	
-	};
+		getCitation(albums[albumID]);
+		res.set('Location', SERVER_ROOT + "/album/" + albumID);
+		res.sendStatus(201);
 
-function DeleteAlbums(req, res) {
-		res.status(405).send("Request not supported.");
-	};
+};
 
 // handling album 
 //
@@ -131,7 +115,7 @@ function SingleGetAlbum(req, res) {
 	}
 };
 
-function SinglePutAlbum(req, res) {
+function SinglePostAlbum(req, res) {
 	var album = album[req.aID];	
 	if (album != undefined && album.status != "Deactive") {
 		if (req.body.forPrinting != undefined) {
@@ -157,9 +141,6 @@ function SinglePutAlbum(req, res) {
 	}		
 };
 
-function SinglePostAlbum(req, res) {
-		res.status(405).send("Request not supported.");
-	};
 
 function SingleDeleteAlbum(req, res) {
 		var album = albums[req.aID];
@@ -170,7 +151,7 @@ function SingleDeleteAlbum(req, res) {
 			album.status = "Deactive";
 			res.status(204).send("Album deactivated!");
 		}	
-	};
+};
 
 
 
@@ -200,31 +181,37 @@ function PostAlbumPhotos(req, res) {
 		}
 		else {  if (album.forPrinting === false) {
 					const newID = "ph" + (Math.random()*1000).toString().substr(1, 4);		
-					var filename = req.files.displayImage.path; // TODO check if file has been sent
-					var ext = filename.substr(filename.lastIndexOf('.'));
-					var photoFilename = newID + ext;
-					var Path = ROOT_DIR + "\\photos\\";
-					var photoPath = Path + photoFilename;
-					fs.exists(Path, function(exists) {
-						if (!exists) {    				
-							fs.mkdir(Path, function(error) {
-								console.log(error); 
-								res.status(500).send(error);	
-							});
-						}
-					});
-					fs.rename(filename, photoPath, function(err){
-						if (!err) {														
-							photos[newID] = buildPhoto(newID, photoPath, req.body.description, req.body.date, album.owner);							
-							album.photos.push(photos[newID]);
-							album.photosCount += 1;
-							album.price = (album.photosCount * photoValue) + shipValue;
-							res.status(201).send("Photo Uploaded Successfuly");
-						}
-						else {
-							res.status(500).send(err);	
-						}
-					});
+					if (req.files.displayImage != undefined) {
+						var filename = req.files.displayImage.path; // TODO check if file has been sent
+						var ext = filename.substr(filename.lastIndexOf('.'));
+						var photoFilename = newID + ext;
+						var Path = ROOT_DIR + "\\photos\\";
+						var photoPath = Path + photoFilename;
+						fs.exists(Path, function(exists) {
+							if (!exists) {    				
+								fs.mkdir(Path, function(error) {
+									console.log(error); 
+									res.status(500).send(error);	
+								});	
+							}
+						});
+						fs.rename(filename, photoPath, function(err){
+							if (!err) {														
+								photos[newID] = buildPhoto(newID, photoPath, req.body.description, req.body.date, album.owner);							
+								album.photos.push(photos[newID]);
+								album.photosCount += 1;
+								album.price = (album.photosCount * photoValue) + shipValue;
+								res.set('Location', SERVER_ROOT + "/album/" + album.id);
+								res.status(201).send("Photo Uploaded Successfuly");
+							}
+							else {
+								res.status(500).send(err);	
+							}
+						});
+					}
+					else {
+						res.status(405).send("Operation not allowed. This is a normal album, you have to add a new photo!");	
+					}
 	 			}
 	 			else {
 	 				album.photos.push(photos[req.body.photoID]);
@@ -233,13 +220,7 @@ function PostAlbumPhotos(req, res) {
 					res.status(200).send("Photo added " + req.body.photoID + " to album " + req.aID + "successfuly");
 	 			}
 		}
-	};
-
-
-function PutAlbumPhotos(req, res) {
-	res.status(405).send("Request not supported.");
 };
-
 
 function DeleteAlbumPhotos(req, res) {
 	var album = albums[req.aID];
@@ -255,7 +236,6 @@ function DeleteAlbumPhotos(req, res) {
 	res.status(405).send("Request not supported.");
 };
 
-
 function buildPhoto(newID, photoPath, description, date, owner) {
 	const now = new Date();
 	return {
@@ -266,7 +246,7 @@ function buildPhoto(newID, photoPath, description, date, owner) {
 			owner: owner,
 			createdOn : now
 		};
-}
+};
 
 
 // handling album photo
@@ -293,16 +273,6 @@ function GetAlbumSinglePhoto(req, res) {
 	}
 };
 
-function PostAlbumSinglePhoto(req, res) {
-	res.status(405).send("Request not supported.");	
-};
-
-
-function PutAlbumSinglePhoto(req, res) {
-	res.status(405).send("Request not supported.");	
-};
-
-
 function DeleteAlbumSinglePhoto(req, res) {
 	var album = albums[req.aID];
 	if (album != undefined && album.status != "Deactive") {
@@ -324,30 +294,12 @@ function DeleteAlbumSinglePhoto(req, res) {
 };
 
 
-function updatePhoto(ID, photoPath, description, date, owner) {
-	const now = new Date();
-
-	return {
-			id : newID, 
-			path : photoPath,
-			description : description, 
-			date: date,
-			owner: owner,
-			createdOn : now
-		};
-}
-
 
 // handling photo
 //
-// GET 		not allowed
 // POST		updates photo
-// PUT 		not allowed
-// DELETE 	not allowed
 
-function GetSinglePhoto(req, res) {
-	res.status(405).send("Request not supported.");	
-};
+
 
 function PostSinglePhoto(req, res) {
 	var photo = photos[req.body.UphotoID];
@@ -355,7 +307,6 @@ function PostSinglePhoto(req, res) {
 		res.status(404).send("Photo " + req.body.phID + " not found.");	
 	}
 	else {
-		console.log(photo);
 		var filename = req.files.UdisplayImage.path; // TODO check if file has been sent
 		var ext = filename.substr(filename.lastIndexOf('.'));
 		var photoFilename = req.body.UphotoID + ext;
@@ -363,7 +314,6 @@ function PostSinglePhoto(req, res) {
 		var photoPath = Path + photoFilename;
 		fs.rename(filename, photoPath, function(err){
 			if (!err) {							
-				console.log(req.body.Udate);
 				photo.path = photoPath;
 				photo.description = req.body.Udescription;
 				photo.date = req.body.Udate;				
@@ -376,12 +326,23 @@ function PostSinglePhoto(req, res) {
 	}	
 };
 
-function PutSinglePhoto(req, res) {
-	res.status(405).send("Request not supported.");	
-};
 
-function DeleteSinglePhoto(req, res) {
-	res.status(405).send("Request not supported.");	
+
+	
+
+
+function getCitation(album) {
+	request({
+    	uri : QuoteURI,
+    		  json : {}
+    		}, function(err, res, body){ 
+        		if (!err) {  
+         			album.citation = body.quote;
+         		}
+         		else {
+         			console.log(err);
+         		}
+         	}) 
 };
 
 
@@ -389,26 +350,20 @@ function DeleteSinglePhoto(req, res) {
 // MODULE EXPORTS
 
 exports.GetAlbums = GetAlbums;
-exports.PutAlbums = PutAlbums;
 exports.PostAlbums = PostAlbums;
-exports.DeleteAlbums = DeleteAlbums;
 
 exports.SingleGetAlbum = SingleGetAlbum;
 exports.SinglePostAlbum = SinglePostAlbum;
-exports.SinglePutAlbum = SinglePutAlbum;
 exports.SingleDeleteAlbum = SingleDeleteAlbum;
 
 exports.GetAlbumPhotos = GetAlbumPhotos;
 exports.PostAlbumPhotos = PostAlbumPhotos;
-exports.PutAlbumPhotos = PutAlbumPhotos;
 exports.DeleteAlbumPhotos = DeleteAlbumPhotos;
 
 exports.GetAlbumSinglePhoto = GetAlbumSinglePhoto;
-exports.PostAlbumSinglePhoto = PostAlbumSinglePhoto;
-exports.PutAlbumSinglePhoto = PutAlbumSinglePhoto;
 exports.DeleteAlbumSinglePhoto = DeleteAlbumSinglePhoto;
 
-exports.GetSinglePhoto = GetSinglePhoto;
 exports.PostSinglePhoto = PostSinglePhoto;
-exports.PutSinglePhoto = PutSinglePhoto
-exports.DeleteSinglePhoto = DeleteSinglePhoto;
+
+exports.TheAlbums = albums;
+
