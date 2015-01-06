@@ -8,7 +8,7 @@ app.use(bodyParser.urlencoded({
 	extended:true})
 );
 
-const port = process.env.PORT || 3002;
+const port = process.env.PORT || 4002;
 const SERVER_ROOT = "http://localhost:" + port;
 
 var orders =  {};
